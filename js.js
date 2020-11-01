@@ -24,34 +24,38 @@
 
       if (year === "currentYear") {
         this.currentFullYear = this.date.getFullYear();
-      } else if ( typeof(year) === Number ) {
-        this.date.setFullYear(year)
+      } else if (typeof(year) === "number") {
+        this.date.setFullYear(year);
         this.currentFullYear = this.date.getFullYear();
       } else {
+        this.clearCalendar();
         this.drawTag("Error Year: Неправильно введён год", ".calendar-container", "calendar-container__header");
-        return;
+        return {"Error Year": "Неправильно введён год"};
       }
 
       if (month === "currentMonth") {
         this.currentMonth = this.date.getMonth();
-      } else if ( typeof(month) === Number ) {
+      } else if (typeof(month) === "number") {
         this.date.setMonth(month);
         this.currentMonth = this.date.getMonth();
       } else {
+        this.clearCalendar();
         this.drawTag("Error Month: Неправильно введён месяц", ".calendar-container", "calendar-container__header");
-        return;
+        return {"Error Month": "Неправильно введён месяц"};
       }
 
       if (date === "currentDate") {
         this.currentDate = this.date.getDate();
-      } else if ( typeof(date) === Number ) {
+      } else if (typeof(date) === "number") {
         this.date.setDate(date);
         this.currentDate = this.date.getDate();
       } else {
+        this.clearCalendar();
         this.drawTag("Error Date: Неправильно введено число", ".calendar-container", "calendar-container__header");
-        return;
+        return {"Error Date": "Неправильно введено число"};
       }
 
+      this.clearCalendar();
       this.drawCalendar();
     }
 
@@ -105,7 +109,7 @@
         }
       }
 
-      
+
       let j = countDatePastMonthInStartCurrentMonth; // Счетчик может быть отрицательным либо 0, если 0, тогда увеличим его на 1, иначе уменшим кол-во countDate ибо есть 0.
       countDate += countDatePastMonthInStartCurrentMonth;
       // Если 1-ое число месяца Пн и кол-во дней прош. мес. в нач. текущего 0, увеличиваем счетчик, чтобы вывести 35 чисел, иначе уменьшаем кол-во дней до 34 ибо есть еще 0.
@@ -124,6 +128,18 @@
     
       this.drawTag("Очистить", ".calendar-container", "calendar-container__clear", "button");
       this.drawTag("Принять", ".calendar-container", "calendar-container__accept", "button");
+    }
+
+    clearCalendar() {
+      if ( document.querySelector(".calendar-container") ) {
+        document.querySelector(".calendar-container").remove();
+      }
+
+      let calendar = document.querySelector(".calendar");
+
+      let calendarContainer = document.createElement("div");
+      calendarContainer.className = "calendar-container";
+      calendar.append(calendarContainer);
     }
 
     drawTag(data, to, className = "", element = "div") {
@@ -223,7 +239,9 @@ window.onload = function() {
     Если желаете вывести текущий год, введеный месяц и текущее число.
     let calendar = new Calendar("currentYear", 2, "currentDate"); - выведет 1 Января 2025 года.
   */
-  let calendar = new Calendar();
+  let calendar;
+
+  calendar = new Calendar("rr");
 }
 
 
