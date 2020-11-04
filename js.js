@@ -21,14 +21,17 @@
 
     constructor(year = "currentYear", month = "currentMonth", date = "currentDate") {
       this.date = new Date();
+      this.getFullDate(year, month, date);
+      this.drawCalendar();
+    }
 
+    getFullDate(year, month, date) {
       if (year === "currentYear") {
         this.currentFullYear = this.date.getFullYear();
       } else if (typeof(year) === "number") {
         this.date.setFullYear(year);
         this.currentFullYear = this.date.getFullYear();
       } else {
-        this.clearCalendar();
         this.drawTag("Error Year: Неправильно введён год", ".calendar-container", "calendar-container__header");
         return {"Error Year": "Неправильно введён год"};
       }
@@ -39,7 +42,6 @@
         this.date.setMonth(month);
         this.currentMonth = this.date.getMonth();
       } else {
-        this.clearCalendar();
         this.drawTag("Error Month: Неправильно введён месяц", ".calendar-container", "calendar-container__header");
         return {"Error Month": "Неправильно введён месяц"};
       }
@@ -50,32 +52,86 @@
         this.date.setDate(date);
         this.currentDate = this.date.getDate();
       } else {
-        this.clearCalendar();
         this.drawTag("Error Date: Неправильно введено число", ".calendar-container", "calendar-container__header");
         return {"Error Date": "Неправильно введено число"};
       }
-
-      this.clearCalendar();
-      this.drawCalendar();
     }
 
     drawCalendar() {
-      // Выводим месяц и год.
-      this.drawTag(this.getNameMonth(this.currentMonth) +" "+ this.currentFullYear, ".calendar-container", "calendar-container__header");
+      this.drawTag("none", ".calendar-container", "calendar-container__header");
+      this.drawTag("none", ".calendar-container__header", "calendar-container__title", "h1");
+      this.drawTag(`${this.getNameMonth(this.currentMonth)} ${this.currentFullYear}`, ".calendar-container__title", "none", "text");
+
+      this.drawTag("<", ".calendar-container__header", "calendar-container__prev", "div", "start");
+      this.drawTag(">", ".calendar-container__header", "calendar-container__next");
       
       // Выводим название недель.
       for (let i = 1; i <= 7; i++) {
         this.drawTag(this.getNameDay(i), ".calendar-container", ".calendar-container__day");
       }
 
+      let ValuesForCalendarTable, startTable, countDate;
+      ValuesForCalendarTable = this.getValuesForCalendarTable();
+      startTable = ValuesForCalendarTable.startTable;
+      countDate = ValuesForCalendarTable.countDate;
+
+      for (;startTable <= countDate; startTable++) {
+        // Изменяя число *Date, меняется и месяц *Month.
+        this.date.setMonth(this.currentMonth); // ? Можно сделать условие и устанавливать текущий месяц, если startTable < 0 или startTable > lastDateCurrentMonth
+        this.date.setDate(startTable);
+        this.drawTag(this.date.getDate(), ".calendar-container", "calendar-container__date");
+      }
+      
+      this.drawTag("none", ".calendar-container", "calendar-container__buttons");
+      this.drawTag("Очистить", ".calendar-container__buttons", "calendar-container__clear", "button");
+      this.drawTag("Принять", ".calendar-container__buttons", "calendar-container__accept", "button");
+    }
+
+    drawTag(data, to, className = "none", element = "div", where = "end") {
+      let block, tag;
+      block = document.querySelector( String(to).trim() );
+      
+      if(element !== "text") {
+        tag = document.createElement(element);
+      } else if (element === "text") {
+        tag = document.createTextNode(data);
+      }
+
+      if(className !== "none"){
+        tag.className = String(className).trim();
+      }
+
+      if(data !== "none"){
+        tag.innerHTML = data;
+      }
+
+      if (where === "start") {
+        block.prepend(tag);
+      } else if (where === "end") {
+        block.append(tag);
+      }
+    }
+
+    updateСalendar(year = "currentYear", month = "currentMonth", date = "currentDate") {
+      this.getFullDate(year, month, date);
+      document.querySelector(".calendar-container__title").innerHTML = `${this.getNameMonth(this.currentMonth)} ${this.currentFullYear}`;
+
+      let dates, datesLength;
+      dates = document.querySelectorAll(".calendar-container__date");
+      datesLength = dates.length;
+      
+      // for (let i = 0; i < datesLength; i++) {
+      //   this.date.setMonth(this.currentMonth);
+      //   dates[i].innerHTML = 
+      // }
+      
+    }
+
+    getValuesForCalendarTable() {
       /*
         TODO: Узнать в какой день недели начало текущего месяца (Готово)
         TODO: Узнать сколько нужно вывести дней прошлого месяца (Готово)
       */
-
-      let countDate, firstDayCurrentMonth, countDatePastMonthInStartCurrentMonth;
-      
-      countDate = 35; // Количество чисел для вывода календаря
 
       /*
         Пример:
@@ -87,6 +143,9 @@
               Если countDatePastMonthInStartCurrentMonth больше 0, тогда 
               countDatePastMonthInStartCurrentMonth = -( countDatePastMonthInStartCurrentMonth(6) - 1 ); -1 ибо есть еще 0, и делаем все это отрицательным числом.
       */
+
+      let countDate, firstDayCurrentMonth, countDatePastMonthInStartCurrentMonth, startTable;
+      countDate = 35; // Количество чисел для вывода календаря
 
       /* 
         * Первый день недели в текущем месяце.
@@ -110,47 +169,16 @@
       }
 
 
-      let j = countDatePastMonthInStartCurrentMonth; // Счетчик может быть отрицательным либо 0, если 0, тогда увеличим его на 1, иначе уменшим кол-во countDate ибо есть 0.
+      startTable = countDatePastMonthInStartCurrentMonth; // Счетчик может быть отрицательным либо 0, если 0, тогда увеличим его на 1, ибо getDate(0) это последний день прошлого месяца.
       countDate += countDatePastMonthInStartCurrentMonth;
-      // Если 1-ое число месяца Пн и кол-во дней прош. мес. в нач. текущего 0, увеличиваем счетчик, чтобы вывести 35 чисел, иначе уменьшаем кол-во дней до 34 ибо есть еще 0.
+      // Если 1-ое число месяца Пн и кол-во дней прош. мес. в нач. текущего 0, увеличиваем счетчик, чтобы вывести 35 чисел, иначе уменьшаем кол-во дней до 34 ибо есть еще 0, который выводит последний день прошлого месяца.
       if (firstDayCurrentMonth === 1 && countDatePastMonthInStartCurrentMonth === 0) {
-        j++;
+        startTable++;
       } else {
         countDate--;
       }
 
-      for (;j <= countDate; j++) {
-        // Изменяя число *Date, меняется и месяц *Month.
-        this.date.setMonth(this.currentMonth); // ? Можно сделать условие и устанавливать текущий месяц, если j < 0 или j > lastDateCurrentMonth
-        this.date.setDate(j);
-        this.drawTag(this.date.getDate(), ".calendar-container", "calendar-container__date");
-      }
-    
-      this.drawTag("Очистить", ".calendar-container", "calendar-container__clear", "button");
-      this.drawTag("Принять", ".calendar-container", "calendar-container__accept", "button");
-    }
-
-    clearCalendar() {
-      if ( document.querySelector(".calendar-container") ) {
-        document.querySelector(".calendar-container").remove();
-      }
-
-      let calendar = document.querySelector(".calendar");
-
-      let calendarContainer = document.createElement("div");
-      calendarContainer.className = "calendar-container";
-      calendar.append(calendarContainer);
-    }
-
-    drawTag(data, to, className = "", element = "div") {
-      let block, tag;
-      block = document.querySelector( String(to).trim() );
-      tag = document.createElement(element);
-      if(className){
-        tag.className = String(className).trim();
-      }
-      tag.innerHTML = data;
-      block.append(tag);
+      return {startTable: startTable, countDate: countDate};
     }
 
     getNameDay(day) {
@@ -228,7 +256,7 @@
 
   }
 
-window.onload = function() {
+window.onload = () => {
   /*
     Вывод месяца, возможен ввод трех необязательных параметров, если оставить параметр пустым, тогда он примет текущий год/месяц/число.
     new Calendar(?year:number, ?month:number, ?date:number)
@@ -239,11 +267,9 @@ window.onload = function() {
     Если желаете вывести текущий год, введеный месяц и текущее число.
     let calendar = new Calendar("currentYear", 2, "currentDate"); - выведет 1 Января 2025 года.
   */
-  let calendar;
-
-  calendar = new Calendar("rr");
+  
 }
-
+let calendar = new Calendar();
 
 
 
