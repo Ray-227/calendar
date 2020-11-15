@@ -21,12 +21,23 @@
 class Calendar {
   constructor() {
     this.fullDate = new Date(); // Получаем текущию дату.
-    // Получаем текущий год, месяц, число.
-    this.year = this.fullDate.getFullYear();
-    this.month = this.fullDate.getMonth();
-    this.date = this.fullDate.getDate();
+    // Получаем значения с sessionStorage ИЛИ текущий год, месяц, число.
+    this.year = Number( sessionStorage.getItem('year') ) || this.fullDate.getFullYear();
+    this.month = Number( sessionStorage.getItem('month') ) || this.fullDate.getMonth();
+    this.date = Number( sessionStorage.getItem('date') ) ||this.fullDate.getDate();
+    
     // Определяем на какой день недели попадает первое число текущего месяца.
     this.firstDay = () => {
+      this.fullDate.setFullYear(this.year); // Для надежности!
+      /* 
+      Все будет правильно выводить и без this.fullDate.setMonth(this.month), но только в текущей сессий, 
+      после обновления страницы конструктор класса вновь запишет текущие значения, из-за этого криво выведутся числа, 
+      нужно чтобы была возможность сохранять прокликанный месяц, год и т.д, даже после перезагрузки страницы.
+      
+      Устанавливаем месяц явно, ибо setDate(1) установить первое число для месяца определённого в this.fullDate.getMonth(), 
+      там всегда текущий месяц, а нам нужно, чтобы месяц был равен sessionStorage.getItem('month'), иначе криво выведутся числа. 
+      */
+      this.fullDate.setMonth(this.month);
       this.fullDate.setDate(1);
       let firstDay = this.fullDate.getDay();
       if (firstDay === 0) {
@@ -35,7 +46,6 @@ class Calendar {
       this.fullDate.setDate(this.date);
       return firstDay;
     };
-    console.log(this.firstDay());
 
     /*
       Почему если я хочу сделать constructor класса со следующим кодом, this.fullDate в методах неопределенна, словно я её и не создавал?
@@ -73,6 +83,7 @@ class Calendar {
     this.drawDates();
 
     drawTag('.calendar-container', 'none', 'calendar-container__buttons');
+
     drawTag('.calendar-container__buttons', 'Очистить', 'calendar-container__clear', 'input button');
     drawTag('.calendar-container__buttons', 'Принять', 'calendar-container__accept', 'input button');
   }
@@ -100,7 +111,7 @@ class Calendar {
         2) Я не делал setMonth(this.month) на последней итераций цикла, данная операция у меня была перед setDate, 
         логичнее её расположить после изменения Date.
     */
-    let tempDate = new Date(this.year, this.month);
+    let tempDate = new Date(this.year, this.month, this.date);
 
     let startTable, countDate;
 
@@ -124,6 +135,7 @@ class Calendar {
     }
     // Если элементов с числами месяца нет, тогда выводим месяц создавая элементы.
     if ( document.querySelector('.calendar-container__date') ) {
+      // console.log(`[drawDates] if:\n this.fullDate: ${this.fullDate}\n   this.year: ${this.year}\n   this.month: ${this.month}\n   this.firstDay(): ${this.firstDay()}\n tempDate: ${tempDate}\n   tempDate.getFullYear(): ${tempDate.getFullYear()}\n   tempDate.getMonth(): ${tempDate.getMonth()}`);
       if (!dates) {
         console.log('Error dates: неизвестно куда выводить новые числа');
         console.log('Error datesLength: неизвестно количество элементов');
@@ -134,20 +146,33 @@ class Calendar {
       for (; startTable <= countDate; startTable++) {
         // По сути ненужная проверка, но пусть будет, так спокойнее.
         if (i < datesLength) {
-          tempDate.setMonth(this.month); // Не понимаю, почему если убрать эту строчку кода, февраль setDate(0) выводит 29, а не 31. В других месяцах ошибок в числах не заметил.
-          tempDate.setDate(startTable);
-          console.log(getNameMonth(this.month), tempDate.getDate(), startTable);
-          dates[i].innerHTML = tempDate.getDate();
           tempDate.setMonth(this.month);
+          tempDate.setDate(startTable);
+          dates[i].innerHTML = tempDate.getDate();
           i++;
+          /* Не понимаю, почему если убрать эту строчку кода, февраль setDate(0) выводит 29, а не 31. 
+          В других месяцах ошибок в числах не заметил. 
+          По моей логие данная строчка должна быть после цикла, 
+          чтобы для возможных будущих итераций в других методах был правильный месяц, 
+          хотя можно все циклы начинать с tempDate.setMonth(this.month), 
+          изначально я так и делал, пока не заметил баг с Февралем. */
+          tempDate.setMonth(this.month);
         }
       }
     } else {
+      // console.log(`[drawDates] else:\n this.fullDate: ${this.fullDate}\n   this.year: ${this.year}\n   this.month: ${this.month}\n   this.firstDay(): ${this.firstDay()}\n tempDate: ${tempDate}\n   tempDate.getFullYear(): ${tempDate.getFullYear()}\n   tempDate.getMonth() ${tempDate.getMonth()}`);
       for (; startTable <= countDate; startTable++) {
         tempDate.setMonth(this.month);
         tempDate.setDate(startTable);
         drawTag('.calendar-container', tempDate.getDate(), 'calendar-container__date');
+        // console.log(`[drawDates] in end for iteration:\n this.year: ${this.year}\n this.month: ${this.month}\n tempDate.getMonth(): ${tempDate.getMonth()}\n tempDate.getDate(): ${tempDate.getDate()}\n startTable ${startTable}`);
+        /* Если убрать setDate(1) перескакивает на след. месяц и выводит 1, 
+        при этом остальные числа выводит текущего месяца. 
+        Ошибки это не взывает, но настораживает, 
+        благодаря tempDate.setMonth(this.month) в конце итераций такого не возникает. */
+        tempDate.setMonth(this.month);
       }
+      // console.log(`[drawDates] from for:\n this.year: ${this.year}\n this.month: ${this.month}\n tempDate.getMonth(): ${tempDate.getMonth()}\n tempDate.getDate(): ${tempDate.getDate()}\n startTable ${startTable}`);
     }
   }
 
@@ -162,6 +187,8 @@ class Calendar {
       this.month = this.fullDate.getMonth();
     }
 
+    this.setStorage();
+    // this.removeStorage();
     this.update();
   }
 
@@ -176,7 +203,29 @@ class Calendar {
       this.month = this.fullDate.getMonth();
     }
 
+    this.setStorage();
+    //this.removeStorage();
     this.update();
+  }
+
+  setStorage() {
+    sessionStorage.setItem('year', this.year);
+    sessionStorage.setItem('month', this.month);
+    sessionStorage.setItem('date', this.date);
+    // console.log(`[setStorage]:\n this.fullDate: ${this.fullDate}\n   this.year: ${this.year}\n   this.month: ${this.month}\n   this.date: ${this.date}\n   this.firstDay(): ${this.firstDay()}`);
+  }
+
+  removeStorage() {
+    sessionStorage.removeItem('year');
+    sessionStorage.removeItem('month');
+    sessionStorage.removeItem('date');
+    // Создаем новую new Date, чтобы получить текущию дату ибо this.fullDate мы изменили в this.firstDay().
+    let currentDate = new Date();
+    // Получаем текущий год, месяц, число.
+    this.year = currentDate.getFullYear();
+    this.month = currentDate.getMonth();
+    this.date = currentDate.getDate();
+    //console.log('Remove storage...');
   }
 }
 
@@ -190,6 +239,21 @@ document.querySelector('.calendar-container__prev').addEventListener('click', fu
 
 document.querySelector('.calendar-container__next').addEventListener('click', function() {
   calendar.next();
+});
+
+/* 
+Не до конца понял, почему я не могу поместить этот кусок кода в draw и вызывать this.removeStorage(), 
+выдает ошибку this.removeStorage is not a function. 
+
+Я думаю что это из-за новой области видимости создаваемой function(e) {}, 
+пробовал передать this, выдает ошибку SyntaxError: missing formal parameter.
+
+Думаю сделать метод clear и вызывать его на подобий prev&next.
+*/
+document.querySelector('.calendar-container__clear').addEventListener('click', function(e) {
+  e.preventDefault();
+  calendar.removeStorage();
+  calendar.update();
 });
 
 
@@ -304,4 +368,9 @@ function getNameDay(day) {
       return 'Сб';
     break;
   }
+}
+
+function clearConsole() {
+  console.clear();
+  return 0;
 }
