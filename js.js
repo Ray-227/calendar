@@ -28,13 +28,14 @@ class Calendar {
     // Определяем на какой день недели попадает первое число текущего месяца.
     this.firstDay = () => {
       this.fullDate.setDate(1);
-      let firstDay = this.fullDate.getDay( this.fullDate.getDate() );
+      let firstDay = this.fullDate.getDay();
       if (firstDay === 0) {
         firstDay = 7;
       }
       this.fullDate.setDate(this.date);
       return firstDay;
     };
+    console.log(this.firstDay());
 
     /*
       Почему если я хочу сделать constructor класса со следующим кодом, this.fullDate в методах неопределенна, словно я её и не создавал?
@@ -47,7 +48,7 @@ class Calendar {
         date: this.fullDate.getDate(),
         firstDay: () => {
           this.fullDate.setDate(1);
-          let firstDay = this.fullDate.getDay( this.fullDate.getDate() );
+          let firstDay = this.fullDate.getDay();
           if (firstDay === 0) {
             firstDay = 7;
           }
@@ -303,5 +304,4 @@ function getNameDay(day) {
       return 'Сб';
     break;
   }
-
 }
